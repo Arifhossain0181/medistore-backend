@@ -1,9 +1,7 @@
-
-
 enum UserRole {
   CUSTOMER
-    ADMIN
-    SELLER
+  SELLER
+  ADMIN
 }
 
 enum OrderStatus {
@@ -11,5 +9,5 @@ enum OrderStatus {
   PROCESSING
   SHIPPED
   DELIVERED
-    CANCELLED
+  CANCELLED
 }

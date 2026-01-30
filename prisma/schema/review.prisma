@@ -1,14 +1,16 @@
 model Review {
-  id         String  @id @default(uuid())
-  rating     Int
-  comment    String?
+  id      String  @id @default(uuid())
+  rating  Int
+  comment String?
 
-  userId     String
-  user      User   @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
   medicineId String
-  medicine  Medicine @relation(fields: [medicineId], references: [id])
+  medicine   Medicine @relation(fields: [medicineId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@unique([userId, medicineId])
 }

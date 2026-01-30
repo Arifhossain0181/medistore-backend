@@ -1,13 +1,14 @@
 model Order {
-  id              String   @id @default(uuid())
+  id              String      @id @default(uuid())
   totalAmount     Float
   shippingAddress String
   status          OrderStatus @default(PLACED)
 
   customerId String
-  customer   User @relation("CustomerOrders", fields: [customerId], references: [id])
+  customer   User   @relation("CustomerOrders", fields: [customerId], references: [id])
 
   items OrderItem[]
-    createdAt DateTime @default(now())  
-    updatedAt DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

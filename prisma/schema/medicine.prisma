@@ -1,22 +1,22 @@
-model Medicine{
-    id      String   @id @default(uuid())
-    name    String   @unique
-    description String
-    Price   Float
-    stock   Int
-    manufacturer String
-    imageUrl String?
+model Medicine {
+  id           String  @id @default(uuid())
+  name         String
+  description  String
+  price        Float
+  stock        Int     @default(0)
+  manufacturer String
+  imageUrl     String?
 
-    categoryId String
-     sellerId   String
+  // Relations
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  category Category @relation(fields: [categoryId], references: [id])
+  sellerId String
+  seller   User   @relation("SellerMedicines", fields: [sellerId], references: [id])
 
-  seller   User @relation("SellerMedicines", fields: [sellerId], references: [id])
+  orderItems OrderItem[]
+  reviews    Review[]
 
-    orderItems OrderItem[]
-    reviews    Review[]
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
