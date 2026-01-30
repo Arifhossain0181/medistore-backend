@@ -1,0 +1,15 @@
+
+
+enum UserRole {
+  CUSTOMER
+    ADMIN
+    SELLER
+}
+
+enum OrderStatus {
+  PLACED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+    CANCELLED
+}

@@ -1,2 +1,1 @@
-// Main application entry point
-console.log('Medical Backend Server');
+import './server.js';
