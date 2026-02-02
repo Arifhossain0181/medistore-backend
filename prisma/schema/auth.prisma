@@ -19,6 +19,7 @@ model User {
   medicines Medicine[] @relation("SellerMedicines")
   orders    Order[]    @relation("CustomerOrders")
   reviews   Review[]
+  cart      Cart?      @relation("CustomerCart")
 
   status String? @default("ACTIVE")
 
