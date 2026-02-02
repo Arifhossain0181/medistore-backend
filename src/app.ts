@@ -3,6 +3,7 @@ import cors from "cors"
 import { auth } from "./lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import authRoutes from "./auth/auth.route.js";
+import { medicineRouter } from "./comPonent/medicine/medicine.route.js";
 
 const app = express();
 
@@ -17,6 +18,8 @@ app.use("/api/auth", toNodeHandler(auth));
 
 // Custom auth routes (login, register, etc.)
 app.use("/api/auth", authRoutes);
+
+app.use("/api/medicine", medicineRouter);
 
 // Define your routes here
 app.get("/", (req, res) => {
