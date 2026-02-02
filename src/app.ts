@@ -3,7 +3,7 @@ import cors from "cors"
 import { auth } from "./lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import authRoutes from "./auth/auth.route.js";
-import { medicineRouter } from "./comPonent/medicine/medicine.route.js";
+import { medicineRouter } from "./auth/medicine/medicine.route.js";
 
 const app = express();
 

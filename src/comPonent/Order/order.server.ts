@@ -1,5 +1,5 @@
-import { prisma } from "../../../lib/prisma.js";
-import { OrderStatus } from "../../../../generated/prisma/index.js";
+import { prisma } from "../../lib/prisma.js";
+import { OrderStatus } from "../../../generated/prisma/index.js";
 
 export const OrderService = {
 
