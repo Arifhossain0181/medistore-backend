@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAllmedicine, getSingleMedicine, createMedicine, updateMedicine, deleteMedicine } from "./mdecine.conrtoller.js";
-import { authMiddleware } from "../../auth/middleware/auth.middleware.js";
-import { Role } from "../../auth/middleware/role.middleware.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { Role } from "../middleware/role.middleware.js";
 
 
 const router = Router()
