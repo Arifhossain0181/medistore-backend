@@ -8,10 +8,16 @@ export const medicineServer = {
     
     //Public
     getALL: async (filters:any) =>{
-        const {categoryId ,minPrice ,maxPrice} = filters;
+        const {categoryId ,minPrice ,maxPrice, manufacturer} = filters;
         return prisma.medicine.findMany({
             where:{
                 ...(categoryId && { categoryId }),
+                ...(manufacturer && { 
+                    manufacturer: {
+                        contains: manufacturer,
+                        mode: 'insensitive'
+                    }
+                }),
                 ...(minPrice || maxPrice ? {
                     price: {
                         ...(minPrice && { gte: Number(minPrice) }),

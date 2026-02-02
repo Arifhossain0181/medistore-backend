@@ -5,9 +5,9 @@ enum UserRole {
 }
 
 enum OrderStatus {
-  PENDING
+  
   PLACED
-  CONFIRMED
+  
   PROCESSING
   SHIPPED
   DELIVERED

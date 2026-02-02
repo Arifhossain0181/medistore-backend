@@ -10,6 +10,7 @@ import adminRouter from "./comPonent/Admin/admin.route.js";
 import orderRoutes from "./comPonent/Order/order.route.js";
 import { cartRouter,  } from "./comPonent/cart/cart.router.js";
 import { reviewRouter } from "./comPonent/review/review.route.js";
+import userRouter from "./comPonent/Profile/user.route.js";
 const app = express();
 
 // Enable CORS
@@ -28,10 +29,11 @@ app.use("/api/medicine", medicineRouter);
 
 app.use('/api/orders', orderRoutes);
 app.use("/api/admin", adminRouter);
-app.use("api/categoryes", categoryRouter);
+app.use("/api/categories", categoryRouter);
 app.use("/api/cart" , cartRouter);
 app.use("/api/reviews" , reviewRouter);
 
+app.use("/api/user", userRouter);
 // Define your routes here
 app.get("/", (req, res) => {
     res.send("Welcome to the Medical Backend API");

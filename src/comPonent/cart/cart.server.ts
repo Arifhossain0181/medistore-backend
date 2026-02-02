@@ -34,4 +34,14 @@ export const cartService = {
       },
     });
   },
+  updateCartItem: async (cartItemId: string, quantity: number) => {
+    return await prisma.cartItem.update({
+      where: {
+        id: cartItemId,
+      },
+      data: {
+        quantity,
+      },
+    });
+  },
 };

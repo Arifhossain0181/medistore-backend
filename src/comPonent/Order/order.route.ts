@@ -10,6 +10,7 @@ router.get("/my-orders", authMiddleware, Role(["CUSTOMER"]), orderController.myO
 
 //seller routes
 router.patch("/:id/status", authMiddleware, Role(["SELLER"]), orderController.updateOrderStatus);
+router.get("/seller", authMiddleware, Role(["SELLER"]), orderController.getsellerOrders);
 router.get("/", authMiddleware, Role(["ADMIN"]), orderController.allOrders);
-
+router.get("/:id", authMiddleware, orderController.getsingleOrder);
 export default router;

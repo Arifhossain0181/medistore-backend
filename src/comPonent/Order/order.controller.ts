@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { OrderService } from "./order.server.js";
+import { get } from "node:http";
+
 
 export const orderController = {
   createOrder: async (req: Request, res: Response) => {
@@ -37,6 +39,7 @@ export const orderController = {
         });
     }
   },
+  
   allOrders: async (req: Request, res: Response) => {
     try {
       const orders = await OrderService.allOrders();
@@ -69,4 +72,30 @@ export const orderController = {
         });
     }
   },
+  getsingleOrder: async (req: Request, res: Response) => {
+    try {
+      const order = await OrderService.getOrderById(
+        req.params.id as string,
+        req.user?.id,
+        req.user?.role
+      );
+      
+      if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+      }
+      
+      res.status(200).json({ success: true, data: order });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: "Failed to fetch order", error: error.message });
+    }
+  },
+  getsellerOrders: async (req: Request, res: Response) => {
+    try {
+      const orders = await OrderService.getOrdersForSeller(req.user!.id as string);
+      res.status(200).json({ success: true, data: orders });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: "Failed to fetch seller orders", error: error.message });
+    }
+  }
 };
+

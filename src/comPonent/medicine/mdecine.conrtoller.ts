@@ -16,11 +16,8 @@ export const getSingleMedicine = async (req:Request, res:Response) =>{
 }
 export const createMedicine = async (req:Request, res:Response) =>{
     try {
-        const { name, description, price, stock, manufacturer, imageUrl, categoryId, sellerId } = req.body;
-        
-        if (!sellerId) {
-            return res.status(400).json({ success: false, message: "sellerId is required" });
-        }
+        const { name, description, price, stock, manufacturer, imageUrl, categoryId } = req.body;
+        const sellerId = req.user!.id;
         
         const medicineData = {
             name,
@@ -41,7 +38,8 @@ export const createMedicine = async (req:Request, res:Response) =>{
 }
 export const updateMedicine = async (req:Request, res:Response) =>{
     try {
-        const { sellerId, ...updateData } = req.body;
+        const updateData = req.body;
+        const sellerId = req.user!.id;
         const medicine = await medicineServer.updateMedicine(req.params.id as string, updateData, sellerId);
         if(medicine.count === 0){
             return res.status(404).json({success:false, message:"Medicine not found or you are not authorized"});
@@ -53,7 +51,7 @@ export const updateMedicine = async (req:Request, res:Response) =>{
 }
 export const deleteMedicine = async (req:Request, res:Response) =>{
     try {
-        const { sellerId } = req.body;
+        const sellerId = req.user!.id;
         const medicine = await medicineServer.deleteMedicine(req.params.id as string, sellerId);
         if(medicine.count === 0){
             return res.status(404).json({success:false, message:"Medicine not found or you are not authorized"});
