@@ -4,8 +4,10 @@ import { auth } from "./lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import authRoutes from "./auth/auth.route.js";
 import { medicineRouter } from "./comPonent/medicine/medicine.route.js";
+import { categoryRouter } from "./comPonent/category/category.route.js";
+
 import adminRouter from "./comPonent/Admin/admin.route.js";
-import orderroutes from "./comPonent/Order/order.route.js";
+import orderRoutes from "./comPonent/Order/order.route.js";
 const app = express();
 
 // Enable CORS
@@ -21,10 +23,10 @@ app.use("/api/auth", toNodeHandler(auth));
 app.use("/api/auth", authRoutes);
 
 app.use("/api/medicine", medicineRouter);
-
-app.use('/api/orders', orderroutes);
-
+app.use("/api/categories", categoryRouter);
+app.use('/api/orders', orderRoutes);
 app.use("/api/admin", adminRouter);
+app.use("api/categoryes", categoryRouter);
 
 // Define your routes here
 app.get("/", (req, res) => {
