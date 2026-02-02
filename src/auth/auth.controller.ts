@@ -78,5 +78,9 @@ export const register = async (req: Request, res: Response) => {
     catch (error) {
         return res.status(500).json({ message: "Internal server error login failed" });
     }
-  }
 
+   
+  }
+ export const me = async (req: Request, res: Response) => {res.json({user: req.user});
+
+    }

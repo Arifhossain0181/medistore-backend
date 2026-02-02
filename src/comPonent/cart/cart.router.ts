@@ -10,3 +10,5 @@ const router = Router()
 router.get("/" ,authMiddleware,Role(["CUSTOMER"]) ,cartController.get)
 router.post("/" ,authMiddleware,Role(["CUSTOMER"]) ,cartController.add)
 router.delete("/:id" ,authMiddleware,Role(["CUSTOMER"]) ,cartController.remove)
+
+export const cartRouter = router;

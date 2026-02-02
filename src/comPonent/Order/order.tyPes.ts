@@ -1,7 +1,7 @@
 
 export type OrderStatus =
-  | "PENDING"
-  | "CONFIRMED"
+  | "PLACED"
+  | "PROCESSING"
   | "SHIPPED"
   | "DELIVERED"
   | "CANCELLED";
