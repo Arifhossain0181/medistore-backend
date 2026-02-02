@@ -1,7 +1,7 @@
 // Better Auth Models
 model User {
   id            String   @id @default(uuid())
-  name          String
+  name          String   @default("")
   email         String
   emailVerified Boolean  @default(false)
   image         String?

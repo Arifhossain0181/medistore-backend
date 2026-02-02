@@ -11,7 +11,7 @@ router.get("/:id", getSingleMedicine)
 
 //seller 
 router.post("/",authMiddleware,Role(["SELLER"]), createMedicine)
-router.put("/:id",authMiddleware,Role(["SELLER"]), updateMedicine)
+router.patch("/:id",authMiddleware,Role(["SELLER"]), updateMedicine)
 router.delete("/:id",authMiddleware,Role(["SELLER"]), deleteMedicine)
 
 export const  medicineRouter = router;

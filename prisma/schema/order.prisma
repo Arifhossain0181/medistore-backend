@@ -2,7 +2,7 @@ model Order {
   id              String      @id @default(uuid())
   totalAmount     Float
   shippingAddress String
-  status          OrderStatus @default(PLACED)
+  status          OrderStatus @default(PENDING)
 
   customerId String
   customer   User   @relation("CustomerOrders", fields: [customerId], references: [id])

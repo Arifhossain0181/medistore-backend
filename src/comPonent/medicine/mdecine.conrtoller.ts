@@ -15,19 +15,51 @@ export const getSingleMedicine = async (req:Request, res:Response) =>{
     res.status(200).json({success:true ,data: medicine});
 }
 export const createMedicine = async (req:Request, res:Response) =>{
-    const sellerId = req.body.sellerId;
-    const medicineData = req.body;
-    const newMedicine = await medicineServer.createMedicine(medicineData, sellerId);
-    res.status(201).json({success:true ,data: newMedicine});
-
+    try {
+        const { name, description, price, stock, manufacturer, imageUrl, categoryId, sellerId } = req.body;
+        
+        if (!sellerId) {
+            return res.status(400).json({ success: false, message: "sellerId is required" });
+        }
+        
+        const medicineData = {
+            name,
+            description,
+            price: Number(price),
+            stock: Number(stock),
+            manufacturer,
+            imageUrl,
+            categoryId
+        };
+        
+        const newMedicine = await medicineServer.createMedicine(medicineData, sellerId);
+        res.status(201).json({success:true ,data: newMedicine});
+    } catch (error: any) {
+        console.error('Create medicine error:', error);
+        res.status(500).json({ success: false, message: "Failed to create medicine", error: error.message });
+    }
 }
 export const updateMedicine = async (req:Request, res:Response) =>{
-    const  medicine = await medicineServer.updateMedicine(req.params.id as string, req.body, req.body.sellerId);
-    if(medicine.count ===0){
-        return  res.status(404).json({success:false ,message:"Medicine not found or you are not authorized"});
+    try {
+        const { sellerId, ...updateData } = req.body;
+        const medicine = await medicineServer.updateMedicine(req.params.id as string, updateData, sellerId);
+        if(medicine.count === 0){
+            return res.status(404).json({success:false, message:"Medicine not found or you are not authorized"});
+        }
+        res.status(200).json({success:true, data: medicine});
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to update medicine", error: error.message });
     }
-    res.status(200).json({success:true ,data: medicine});
 }
 export const deleteMedicine = async (req:Request, res:Response) =>{
-    const medicine = await medicineServer.deleteMedicine(req.params.id as string, req.body.sellerId ,);
+    try {
+        const { sellerId } = req.body;
+        const medicine = await medicineServer.deleteMedicine(req.params.id as string, sellerId);
+        if(medicine.count === 0){
+            return res.status(404).json({success:false, message:"Medicine not found or you are not authorized"});
+        }
+        res.status(200).json({success:true, message: "Medicine deleted successfully"});
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to delete medicine", error: error.message });
+    }
 }

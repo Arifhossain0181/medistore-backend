@@ -14,16 +14,26 @@ export const auth = betterAuth({
     },
     user: {
        additionalFields:{
+        name:{
+            type: "string",
+            defaultValue: "",
+            required: false,
+        },
         role:{
             type: "string",
-            defaultValue: "user",
+            defaultValue: "CUSTOMER",
+            required: false,
         },
         status:{
             type: "string",
-            defaultValue: "active",
+            defaultValue: "ACTIVE",
             required: false,
         },
-
+        isBanned:{
+            type: "boolean",
+            defaultValue: false,
+            required: false,
+        },
        }
         
     },
