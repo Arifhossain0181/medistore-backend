@@ -4,3 +4,7 @@ dist
 build
 .DS_Store
 /generated/prisma
+
+seed-admin.ts
+seed-categories.ts
+test-register.js
