@@ -13,8 +13,13 @@ import { reviewRouter } from "./comPonent/review/review.route.js";
 import userRouter from "./comPonent/Profile/user.route.js";
 const app = express();
 
-// Enable CORS
-app.use(cors());
+// Enable CORS with credentials
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 // Apply JSON middleware
 app.use(express.json());
