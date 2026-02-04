@@ -11,6 +11,7 @@ import orderRoutes from "./comPonent/Order/order.route.js";
 import { cartRouter,  } from "./comPonent/cart/cart.router.js";
 import { reviewRouter } from "./comPonent/review/review.route.js";
 import userRouter from "./comPonent/Profile/user.route.js";
+import sellerRouter from "./comPonent/seller/seller.route.js";
 const app = express();
 
 // Enable CORS with credentials
@@ -24,16 +25,17 @@ app.use(cors({
 // Apply JSON middleware
 app.use(express.json());
 
-// Better Auth - handles all routes under /api/auth
-app.use("/api/auth", toNodeHandler(auth));
-
-// Custom auth routes (login, register, etc.)
+// Custom auth routes (login, register, etc.) - MUST come before better-auth
 app.use("/api/auth", authRoutes);
 
-app.use("/api/medicine", medicineRouter);
+// Better Auth - handles remaining auth routes
+app.use("/api/auth", toNodeHandler(auth));
+
+app.use("/api/medicines", medicineRouter);
 
 app.use('/api/orders', orderRoutes);
 app.use("/api/admin", adminRouter);
+app.use("/api/seller", sellerRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/cart" , cartRouter);
 app.use("/api/reviews" , reviewRouter);

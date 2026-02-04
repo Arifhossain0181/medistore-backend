@@ -7,7 +7,7 @@ import { admincontroler } from "./admin.controller.js";
 
 const router = Router();
 
-router.get("/users", authMiddleware,Role(["ADMIN"]),admincontroler.getallusers);
-router.patch("/users/ban/:id",authMiddleware,Role(["ADMIN"]),admincontroler.banUnbanUsers);
+router.get("/users", authMiddleware, Role(["ADMIN"]), admincontroler.getallusers);
+router.patch("/users/:id", authMiddleware, Role(["ADMIN"]), admincontroler.banUnbanUsers);
 
 export default router;

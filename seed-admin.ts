@@ -28,11 +28,11 @@ async function main() {
     }
   });
 
-  console.log('✅ Admin user created successfully!');
+  console.log(' Admin user created successfully!');
   console.log('Email:', admin.email);
   console.log('Password: admin123');
   console.log('Role:', admin.role);
-  console.log('\n⚠️  Please change the password after first login!');
+  console.log('\n Please change the password after first login!');
 
   await prisma.$disconnect();
 }
