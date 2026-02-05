@@ -30,7 +30,6 @@ export const medicineServer = {
                 seller:{select:{id:true,name:true}}
             }
         })
-
     },
 
     getSingle: async(id:string) =>{
@@ -54,11 +53,12 @@ export const medicineServer = {
         })
     },
     updateMedicine: async (id:string ,data:any,sellerId:string) =>{
-    return prisma.medicine.updateMany({
-        where:{id, sellerId},
-        data
-    })
+        return prisma.medicine.updateMany({
+            where:{id, sellerId},
+            data
+        })
     },
+    // Removed admin update logic; only sellers can update their own medicine
     deleteMedicine: async (id:string ,sellerId:string) =>{
         return prisma.medicine.deleteMany({
             where:{id, sellerId}
@@ -74,4 +74,4 @@ export const medicineServer = {
             }
         })
     }
-}
+};

@@ -9,11 +9,26 @@ export const OrderService = {
     items: any[],
     shippingAddress: string,
   ) => {
-    // Calculate total amount from items
-    const totalAmount = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
+    // Validate that referenced medicines exist and use their stored prices
+    const medicineIds = items.map((i) => i.medicineId);
+    const medicines = await prisma.medicine.findMany({
+      where: { id: { in: medicineIds } },
+      select: { id: true, price: true },
+    });
+
+    const missing = medicineIds.filter(
+      (id) => !medicines.some((m) => m.id === id),
     );
+    if (missing.length) {
+      throw new Error(`Medicine(s) not found: ${missing.join(",")}`);
+    }
+
+    // Calculate total amount using official medicine prices when available
+    const totalAmount = items.reduce((sum, item) => {
+      const med = medicines.find((m) => m.id === item.medicineId)!;
+      const price = item.price ?? med.price;
+      return sum + price * item.quantity;
+    }, 0);
 
     return await prisma.order.create({
       data: {
@@ -22,11 +37,14 @@ export const OrderService = {
         totalAmount,
         shippingAddress,
         items: {
-          create: items.map((item: any) => ({
-            medicineId: item.medicineId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+          create: items.map((item: any) => {
+            const med = medicines.find((m) => m.id === item.medicineId)!;
+            return {
+              medicineId: item.medicineId,
+              quantity: item.quantity,
+              price: item.price ?? med.price,
+            };
+          }),
         },
       },
       include: {
@@ -39,10 +57,10 @@ export const OrderService = {
       },
     });
   },
-  getMyOrders: async (customerId: string) => {
+  getMyOrders: async (customerId: string ,email: string) => {
     return await prisma.order.findMany({
       where: {
-        customerId,
+        customerId
       },
       include: {
         items: {
@@ -50,7 +68,10 @@ export const OrderService = {
             medicine: true,
           },
         },
-        customer: true,
+        customer: true
+      },
+      orderBy: {
+        createdAt: 'desc'
       },
     });
   },

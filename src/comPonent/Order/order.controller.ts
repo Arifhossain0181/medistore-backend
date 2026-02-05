@@ -26,10 +26,15 @@ export const orderController = {
   },
   myOrders: async (req: Request, res: Response) => {
     try {
+      console.log('myOrders called - User:', req.user);
       const customerId = req.user!.id; // Get from authenticated user
-      const Orders = await OrderService.getMyOrders(customerId);
+      const email = req.user!.email; // Get from authenticated user
+      console.log('Fetching orders for customerId:', customerId, 'email:', email);
+      const Orders = await OrderService.getMyOrders(customerId, email as string);
+      console.log('Orders fetched successfully:', Orders.length);
       res.status(200).json({ success: true, data: Orders });
     } catch (error: any) {
+      console.error('Error in myOrders controller:', error);
       res
         .status(500)
         .json({
