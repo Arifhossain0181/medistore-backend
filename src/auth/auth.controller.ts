@@ -30,10 +30,13 @@ export const register = async (req: Request, res: Response) => {
       }
     });
 
-    // Update the user role in database
+    // Update the user role and name in database
     await prisma.user.update({
       where: { id: result.user.id },
-      data: { role: userRole }
+      data: { 
+        role: userRole,
+        name: name  // Ensure name is properly saved
+      }
     });
     
     return res.status(201).json({ message: "User registered successfully" });
@@ -134,5 +137,34 @@ export const register = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Me endpoint error:", error);
         return res.status(500).json({ message: "Internal server error" });
+    }
+
+
+ }
+  
+ export const logout = async (req: Request, res: Response) => {
+    try{
+        const cookies = req.headers.cookie?.split(';').map(c => c.trim()) || [];
+        const sesssioncookie = cookies.find(c=> c.startsWith('better-auth.session_token='));
+        const token = sesssioncookie?.split('=')[1];
+        if(!token){
+            return res.status(400).json({message: "No session token found"});
+        }
+        await prisma.session.deleteMany({where:{token}}).catch(()=>{
+
+        });
+        res.clearCookie("better-auth.session_token" ,{
+            httpOnly:true,
+            sameSite:"lax",
+            secure: process.env.NODE_ENV === "production",
+        });
+        return  res.status(200).json({message: "Logout successful"
+        });
+       
+
+    }
+    catch (error) {
+        console.error("Logout error:", error);
+        return res.status(500).json({ message: "Internal server error logout failed" });
     }
  }
