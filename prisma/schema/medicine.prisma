@@ -6,6 +6,7 @@ model Medicine {
   stock        Int     @default(0)
   manufacturer String
   imageUrl     String?
+  viewCount    Int     @default(0)
 
   // Relations
   categoryId String

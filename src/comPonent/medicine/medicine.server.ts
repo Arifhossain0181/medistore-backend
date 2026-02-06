@@ -63,5 +63,15 @@ export const medicineServer = {
         return prisma.medicine.deleteMany({
             where:{id, sellerId}
         })
+    },
+    incrementView: async (id:string)=>{
+        return prisma.medicine.update({
+            where:{id},
+            data:{
+                viewCount:{
+                    increment:1
+                }
+            }
+        })
     }
 }

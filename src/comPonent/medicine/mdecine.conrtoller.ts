@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { medicineServer } from './medicine.server.js';
+import { me } from '../../auth/auth.controller.js';
 
 export const getAllmedicine  = async (req: Request, res: Response) =>{
     
@@ -59,5 +60,15 @@ export const deleteMedicine = async (req:Request, res:Response) =>{
         res.status(200).json({success:true, message: "Medicine deleted successfully"});
     } catch (error: any) {
         res.status(500).json({ success: false, message: "Failed to delete medicine", error: error.message });
+    }
+}
+export const incrementView  = async (req: Request, res: Response) => {
+    try{
+        const {id} = req.params;
+        await medicineServer.incrementView(id as string);
+        res.json({success:true});
+    }
+    catch(error:any){
+        res.status(500).json({ success: false, message: "Failed to increment view count", error: error.message });
     }
 }
