@@ -34,7 +34,17 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         // Query session from database
         const session = await prisma.session.findUnique({
             where: { token: sessionToken },
-            include: { user: true }
+            include: { 
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        role: true,
+                        isBanned: true
+                    }
+                }
+            }
         });
 
         if (!session) {
@@ -48,7 +58,14 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
             return res.status(401).json({ message: "Session expired" });
         }
 
+        // Check if user is banned
+        if (session.user.isBanned) {
+            console.log("User is banned");
+            return res.status(403).json({ message: "User is banned" });
+        }
+
         req.user = session.user;
+        console.log("Authenticated user:", { id: session.user.id, email: session.user.email, role: session.user.role });
         next();
     } catch (error) {
         console.error("Auth middleware error:", error);

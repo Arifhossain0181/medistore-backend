@@ -1,11 +1,11 @@
 import express from "express"
 import cors from "cors"
+import cookieParser from "cookie-parser";
 import { auth } from "./lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import authRoutes from "./auth/auth.route.js";
 import { medicineRouter } from "./comPonent/medicine/medicine.route.js";
 import { categoryRouter } from "./comPonent/category/category.route.js";
-
 import adminRouter from "./comPonent/Admin/admin.route.js";
 import orderRoutes from "./comPonent/Order/order.route.js";
 import { cartRouter,  } from "./comPonent/cart/cart.router.js";
@@ -25,12 +25,16 @@ app.use(cors({
 // Apply JSON middleware
 app.use(express.json());
 
+// Parse cookies for Better Auth session
+app.use(cookieParser());
+
 // Custom auth routes (login, register, etc.) - MUST come before better-auth
 app.use("/api/auth", authRoutes);
 
 // Better Auth - handles remaining auth routes
 app.use("/api/auth", toNodeHandler(auth));
 
+// Routes (auth middleware is applied individually in each route file where needed)
 app.use("/api/medicines", medicineRouter);
 
 app.use('/api/orders', orderRoutes);
