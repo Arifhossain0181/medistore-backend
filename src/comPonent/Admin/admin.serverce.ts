@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { UserRole } from "../../../generated/prisma/index.js";
 
 
 export const adminService={
@@ -21,6 +22,12 @@ export const adminService={
         return await prisma.user.update({
             where:{ id: customerId },
             data:{ isBanned }
+        })
+    },
+    updateUserRole: async(userId:string, role:UserRole)=>{
+        return await prisma.user.update({
+            where:{ id: userId },
+            data:{ role }
         })
     }
 }
