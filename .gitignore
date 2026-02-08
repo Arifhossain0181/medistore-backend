@@ -8,3 +8,4 @@ build
 
 seed-categories.ts
 test-register.js
+.vercel

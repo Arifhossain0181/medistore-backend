@@ -144,7 +144,7 @@ export const OrderService = {
   //seller specific orders
 
   getOrdersForSeller: async (sellerId: string) => {
-    return await prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where:{
         items:{
           some:{
@@ -157,6 +157,7 @@ export const OrderService = {
       include:{
         customer:{
           select:{
+            id: true,
             name:true,
             email:true
           }
@@ -177,6 +178,18 @@ export const OrderService = {
       orderBy: {
         createdAt: 'desc'
       }
-    })
+    });
+
+    // Map orders to include user info and filter items for this seller only
+    return orders.map(order => ({
+      ...order,
+      user: order.customer,
+      userId: order.customerId,
+      total: order.totalAmount,
+      // Filter items to show only this seller's products
+      items: order.items
+        .filter(item => item.medicine.sellerId === sellerId)
+        .map(item => item.medicine.name)
+    }));
   }
 };

@@ -21,7 +21,7 @@ export const cartController = {
     },
     remove:async (req:Request ,res:Response)=>{
         try{
-            await cartService.deleteCartItem(req.params.id);
+            await cartService.deleteCartItem(req.params.id as string);
             res.json({success:true, message:"Item removed"});
         } catch(error){
             res.status(500).json({success:false ,message:"Failed to remove item from cart"});
@@ -30,7 +30,7 @@ export const cartController = {
     update:async (req:Request ,res:Response)=>{
         try{
             const { quantity } = req.body;
-            const item = await cartService.updateCartItem(req.params.id, Number(quantity));
+            const item = await cartService.updateCartItem(req.params.id as string, Number(quantity));
             res.json({success:true, data: item, message:"Cart item updated"});
         } catch(error){
             res.status(500).json({success:false ,message:"Failed to update cart item"});

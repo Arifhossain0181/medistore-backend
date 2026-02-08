@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { OrderService } from "./order.server.js";
 import { get } from "node:http";
+import { Prisma } from "../../../generated/prisma/index.js";
+import { prisma } from "../../lib/prisma.js";
 
 
 export const orderController = {
@@ -61,20 +63,79 @@ export const orderController = {
   },
   updateOrderStatus: async (req: Request, res: Response) => {
     try {
-      const { orderId, status } = req.body;
-      const updateOrderStatus = await OrderService.updateOrderStatus(
-        orderId,
-        status,
-      );
-      res.status(200).json({ success: true, data: updateOrderStatus });
+      const sellerId = req.user!.id;
+      const orderId = req.params.id;
+      const { status } = req.body;
+
+      console.log('updateOrderStatus called - Seller ID:', sellerId, 'Order ID:', orderId, 'New Status:', status);
+
+      // Validate status value first
+      const allowedStatuses = [
+        "PLACED",
+        "CONFIRMED",
+        "SHIPPED",
+        "DELIVERED",
+        "CANCELLED"
+      ];
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status value. Allowed values: " + allowedStatuses.join(", ") });
+      }
+
+      // Check if seller is authorized to update this order (has items in the order)
+      const order = await prisma.order.findFirst({
+        where: {
+          id: orderId as string,
+          items: {
+            some: {
+              medicine: {
+                sellerId: sellerId
+              }
+            }
+          }
+        }
+      });
+
+      if (!order) {
+        return res.status(403).json({ success: false, message: "You are not authorized to update this order. No items from your medicines found in this order." });
+      }
+
+      // Update the order status
+      const updatedOrder = await prisma.order.update({
+        where: { id: orderId as string },
+        data: { status },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          items: {
+            include: {
+              medicine: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  sellerId: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      console.log('Order status updated successfully:', updatedOrder.id, 'New status:', updatedOrder.status);
+      res.status(200).json({ success: true, data: updatedOrder });
     } catch (error: any) {
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to update order status",
-          error: error.message,
-        });
+      console.error('Error updating order statussdsds:', error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update order statussssss",
+        error: error.message,
+      });
     }
   },
   getsingleOrder: async (req: Request, res: Response) => {
@@ -96,9 +157,12 @@ export const orderController = {
   },
   getsellerOrders: async (req: Request, res: Response) => {
     try {
+      console.log('Seller orders request - Seller ID:', req.user!.id);
       const orders = await OrderService.getOrdersForSeller(req.user!.id as string);
+      console.log('Seller orders found:', orders.length);
       res.status(200).json({ success: true, data: orders });
     } catch (error: any) {
+      console.error('Error fetching seller orders:', error);
       res.status(500).json({ success: false, message: "Failed to fetch seller orders", error: error.message });
     }
   }
