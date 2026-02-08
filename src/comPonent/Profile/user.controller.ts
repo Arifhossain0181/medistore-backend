@@ -1,14 +1,15 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import bcrypt from "bcrypt";
+import { email } from "better-auth";
 
 export const updateProfile = async (req: Request, res: Response) => {
-            const { name ,image } =req.body;
+            const { name ,image, email } =req.body;
 
     try{
         const user = await prisma.user.update({
             where: { id: req.user.id },
-            data: { name, image },
+            data: { ...(name && {name}), ...(image && {image}) ,...(email && {email})},
             select:{
                 id:true,
                 name:true,

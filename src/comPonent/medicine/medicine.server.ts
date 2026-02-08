@@ -1,6 +1,7 @@
 
 import { create } from "node:domain";
 import { prisma } from "../../lib/prisma.js";
+import { Prisma } from "../../../generated/prisma/index.js";
 
 
 export const medicineServer = {
@@ -52,16 +53,17 @@ export const medicineServer = {
             }
         })
     },
-    updateMedicine: async (id:string ,data:any,sellerId:string) =>{
-        return prisma.medicine.updateMany({
-            where:{id, sellerId},
+    updateMedicine: async (id:string ,data:Prisma.MedicineUpdateInput, sellerId:string) =>{
+        // Any seller can update any medicine
+        return prisma.medicine.update({
+            where:{id},
             data
         })
     },
-    // Removed admin update logic; only sellers can update their own medicine
+    // Any seller can delete any medicine
     deleteMedicine: async (id:string ,sellerId:string) =>{
-        return prisma.medicine.deleteMany({
-            where:{id, sellerId}
+        return prisma.medicine.delete({
+            where:{id}
         })
     },
     incrementView: async (id:string)=>{

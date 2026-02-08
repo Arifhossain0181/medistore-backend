@@ -42,8 +42,8 @@ export const updateMedicine = async (req:Request, res:Response) =>{
         const updateData = req.body;
         const sellerId = req.user!.id;
         const medicine = await medicineServer.updateMedicine(req.params.id as string, updateData, sellerId);
-        if(medicine.count === 0){
-            return res.status(404).json({success:false, message:"Medicine not found or you are not authorized"});
+        if(!medicine){
+            return res.status(404).json({success:false, message:"Medicine not found"});
         }
         res.status(200).json({success:true, data: medicine});
     } catch (error: any) {
@@ -54,8 +54,8 @@ export const deleteMedicine = async (req:Request, res:Response) =>{
     try {
         const sellerId = req.user!.id;
         const medicine = await medicineServer.deleteMedicine(req.params.id as string, sellerId);
-        if(medicine.count === 0){
-            return res.status(404).json({success:false, message:"Medicine not found or you are not authorized"});
+        if(!medicine){
+            return res.status(404).json({success:false, message:"Medicine not found"});
         }
         res.status(200).json({success:true, message: "Medicine deleted successfully"});
     } catch (error: any) {

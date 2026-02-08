@@ -6,8 +6,11 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    baseURL: "http://localhost:5000",
-    trustedOrigins:[process.env.FRONTEND_URL || "http://localhost:3000"],
+    baseURL: process.env.BACKEND_URL || "http://localhost:5000",
+    trustedOrigins: [
+        process.env.FRONTEND_URL || "http://localhost:3000",
+        "https://medistore-frontend-ten.vercel.app"
+    ],
    
     advanced: {
         disableCSRFCheck: true,

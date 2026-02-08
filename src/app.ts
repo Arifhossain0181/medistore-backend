@@ -12,17 +12,16 @@ import { cartRouter,  } from "./comPonent/cart/cart.router.js";
 import { reviewRouter } from "./comPonent/review/review.route.js";
 import userRouter from "./comPonent/Profile/user.route.js";
 import sellerRouter from "./comPonent/seller/seller.route.js";
+import { authMiddleware } from "./auth/middleware/auth.middleware.js";
 const app = express();
 
 // Enable CORS with credentials
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
+  origin:process.env.FRONTEND_URL ,
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// Apply JSON middleware
+// Apply JSON middlewarezz
 app.use(express.json());
 
 // Parse cookies for Better Auth session
@@ -46,9 +45,12 @@ app.use("/api/reviews" , reviewRouter);
 
 app.use("/api/user", userRouter);
 
-// Define your routes here
-app.get("/", (req, res) => {
-    res.send("Welcome to the Medical Backend API");
+// Debug endpoint to check authentication
+app.get("/api/debug/auth", authMiddleware, (req, res) => {
+  res.json({
+    message: "Authenticated",
+    user: req.user
+  });
 });
 
 // 404 handler - must be after all routes
