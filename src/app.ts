@@ -17,7 +17,7 @@ const app = express();
 
 // Enable CORS with credentials
 app.use(cors({
-  origin:"https://medical-backend-arif-hossains-projects-10336566.vercel.app" ,
+  origin: process.env.FRONTEND_URL || "*",
   credentials: true,
 }));
 
