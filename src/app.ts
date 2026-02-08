@@ -53,6 +53,26 @@ app.get("/api/debug/auth", authMiddleware, (req, res) => {
   });
 });
 
+// Root endpoint - API health check
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "MediStore Backend API is running",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth",
+      medicines: "/api/medicines",
+      categories: "/api/categories",
+      orders: "/api/orders",
+      cart: "/api/cart",
+      reviews: "/api/reviews",
+      admin: "/api/admin",
+      seller: "/api/seller",
+      user: "/api/user"
+    }
+  });
+});
+
 // 404 handler - must be after all routes
 app.use((req, res, next) => {
   res.status(404).json({
