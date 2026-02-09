@@ -27,6 +27,14 @@ export const categoryService = {
   },
   
   deleteCategory: async (id: string) => {
+    
+    // Check if any medicines exist for this category
+    const medicineCount = await prisma.medicine.count({
+      where: { categoryId: id },
+    });
+    if (medicineCount > 0) {
+      throw new Error("Cannot delete category: medicines exist for this category.");
+    }
     return await prisma.category.delete({
       where: { id },
     });

@@ -45,9 +45,33 @@ app.use("/api/cart" , cartRouter);
 app.use("/api/reviews" , reviewRouter);
 
 app.use("/api/user", userRouter);
+
 // Define your routes here
 app.get("/", (req, res) => {
     res.send("Welcome to the Medical Backend API");
+});
+
+// 404 handler - must be after all routes
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.url} not found`,
+    error: "Not Found"
+  });
+});
+
+// Global error handler - must be last
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Global error handler:', err);
+  
+  const statusCode = err.statusCode || err.status || 500;
+  const message = err.message || 'Internal Server Error';
+  
+  res.status(statusCode).json({
+    success: false,
+    message: message,
+    error: process.env.NODE_ENV === 'production' ? 'Server Error' : err.stack
+  });
 });
 
 export default app;
