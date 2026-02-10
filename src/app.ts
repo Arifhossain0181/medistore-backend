@@ -14,18 +14,18 @@ import userRouter from "./comPonent/Profile/user.route.js";
 import sellerRouter from "./comPonent/seller/seller.route.js";
 import { authMiddleware } from "./auth/middleware/auth.middleware.js";
 const app = express();
+app.use(express.json());
+app.use(cookieParser());
+
 
 // Enable CORS with credentials
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
+  origin:"https://medistore-frontend-nu.vercel.app" ,
   credentials: true,
 }));
 
-// Apply JSON middlewarezz
-app.use(express.json());
 
-// Parse cookies for Better Auth session
-app.use(cookieParser());
+
 
 // Custom auth routes (login, register, etc.) - MUST come before better-auth
 app.use("/api/auth", authRoutes);
@@ -44,15 +44,6 @@ app.use("/api/cart" , cartRouter);
 app.use("/api/reviews" , reviewRouter);
 
 app.use("/api/user", userRouter);
-
-// Debug endpoint to check authentication
-app.get("/api/debug/auth", authMiddleware, (req, res) => {
-  res.json({
-    message: "Authenticated",
-    user: req.user
-  });
-});
-
 // Root endpoint - API health check
 app.get("/", (req, res) => {
   res.json({
@@ -70,6 +61,14 @@ app.get("/", (req, res) => {
       seller: "/api/seller",
       user: "/api/user"
     }
+  });
+});
+
+// Debug endpoint to check authentication
+app.get("/api/debug/auth", authMiddleware, (req, res) => {
+  res.json({
+    message: "Authenticated",
+    user: req.user
   });
 });
 
