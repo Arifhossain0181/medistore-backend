@@ -35,4 +35,37 @@ export const admincontroler = {
       res.status(500).json({ message: "Failed to update user role", error: error.message });
     }
   },
+
+  getDeliveryManApplications: async (_req: Request, res: Response) => {
+    try {
+      const applications = await adminService.getDeliveryManApplications();
+      res.status(200).json({ success: true, data: applications });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch delivery man applications", error: error.message });
+    }
+  },
+
+  reviewDeliveryManApplication: async (req: Request, res: Response) => {
+    try {
+      const { action, rejectionReason } = req.body;
+      if (action !== "APPROVE" && action !== "REJECT") {
+        return res.status(400).json({ message: "action must be APPROVE or REJECT" });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const reviewed = await adminService.reviewDeliveryManApplication(
+        req.params.id as string,
+        action,
+        req.user.id,
+        rejectionReason,
+      );
+
+      res.status(200).json({ success: true, data: reviewed, message: `Application ${action.toLowerCase()}d` });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to review delivery man application", error: error.message });
+    }
+  },
 };

@@ -3,6 +3,14 @@ model Order {
   totalAmount     Float
   shippingAddress String
   status          OrderStatus @default(PLACED)
+  fulfillmentType OrderFulfillmentType @default(OWN_DELIVERY)
+  deliveryFee     Float       @default(0)
+  etaDays         Int?
+  serviceDivision  String?
+  serviceDistrict  String?
+  serviceThana     String?
+  courierPartner   String?
+  trackingNumber   String?
 
   customerId String
   customer   User   @relation("CustomerOrders", fields: [customerId], references: [id])

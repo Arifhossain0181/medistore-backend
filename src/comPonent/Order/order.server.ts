@@ -3,12 +3,26 @@ import { OrderStatus } from "../../../generated/prisma/index.js";
 import { get } from "node:http";
 import { create } from "node:domain";
 
+type CreateOrderInput = {
+  shippingAddress: string;
+  division: string;
+  district: string;
+  thana: string;
+  phone?: string;
+};
+
 export const OrderService = {
   createOrder: async (
     customerId: string,
     items: any[],
-    shippingAddress: string,
+    orderInput: CreateOrderInput,
   ) => {
+    const { shippingAddress, division, district, thana } = orderInput;
+
+    if (!division || !district || !thana) {
+      throw new Error("Delivery area selection is required");
+    }
+
     // Validate that referenced medicines exist and use their stored prices
     const medicineIds = items.map((i) => i.medicineId);
     const medicines = await prisma.medicine.findMany({
@@ -21,6 +35,19 @@ export const OrderService = {
     );
     if (missing.length) {
       throw new Error(`Medicine(s) not found: ${missing.join(",")}`);
+    }
+
+    const coverage = await prisma.deliveryCoverage.findFirst({
+      where: {
+        division: { equals: division, mode: "insensitive" },
+        district: { equals: district, mode: "insensitive" },
+        thana: { equals: thana, mode: "insensitive" },
+        active: true,
+      },
+    });
+
+    if (!coverage) {
+      throw new Error("Selected area is not serviceable yet. Please choose another area or contact admin.");
     }
 
     // Calculate total amount using official medicine prices when available
@@ -36,6 +63,12 @@ export const OrderService = {
         status: OrderStatus.PLACED,
         totalAmount,
         shippingAddress,
+        fulfillmentType: coverage.deliveryMode,
+        deliveryFee: coverage.fee,
+        etaDays: coverage.etaDays,
+        serviceDivision: coverage.division,
+        serviceDistrict: coverage.district,
+        serviceThana: coverage.thana,
         items: {
           create: items.map((item: any) => {
             const med = medicines.find((m) => m.id === item.medicineId)!;

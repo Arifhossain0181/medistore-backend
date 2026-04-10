@@ -8,5 +8,7 @@ const router = Router();
 router.get("/users", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.getallusers);
 router.patch("/users/:id/ban", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.banUnbanUsers);
 router.patch("/users/:id/role", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.updateUserRole);
+router.get("/delivery-man-applications", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.getDeliveryManApplications);
+router.patch("/delivery-man-applications/:id/review", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.reviewDeliveryManApplication);
 
 export default router;

@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { OrderService } from "./order.server.js";
 import { prisma } from "../../lib/prisma.js";
 
-const sellerAllowedStatuses = ["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
-const deliveryAllowedStatuses = ["PROCESSING", "SHIPPED", "DELIVERED"];
+const sellerAllowedStatuses = ["PROCESSING", "CANCELLED"];
+const deliveryAllowedStatuses = ["SHIPPED", "DELIVERED", "FAILED"];
 
 const orderInclude = {
   customer: {
@@ -30,9 +30,14 @@ const orderInclude = {
 export const orderController = {
   createOrder: async (req: Request, res: Response) => {
     try {
-      const { items, shippingAddress } = req.body;
+      const { items, shippingAddress, division, district, thana } = req.body;
       const customerId = req.user!.id;
-      const newOrder = await OrderService.createOrder(customerId, items, shippingAddress);
+      const newOrder = await OrderService.createOrder(customerId, items, {
+        shippingAddress,
+        division,
+        district,
+        thana,
+      });
       res.status(201).json({ success: true, data: newOrder });
     } catch (error: any) {
       res.status(500).json({ success: false, message: "Failed to create order", error: error.message });
@@ -197,6 +202,53 @@ export const orderController = {
       res.status(200).json({ success: true, data: updatedOrder });
     } catch (error: any) {
       res.status(500).json({ success: false, message: "Failed to update delivery status", error: error.message });
+    }
+  },
+
+  updateCourierBooking: async (req: Request, res: Response) => {
+    try {
+      const orderId = String(req.params.id || "").trim();
+      const { courierPartner, trackingNumber } = req.body as {
+        courierPartner?: string;
+        trackingNumber?: string;
+      };
+
+      if (!courierPartner || !trackingNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "courierPartner and trackingNumber are required",
+        });
+      }
+
+      if (!orderId) {
+        return res.status(400).json({ success: false, message: "Order id is required" });
+      }
+
+      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+      }
+
+      if (order.fulfillmentType !== "COURIER") {
+        return res.status(400).json({
+          success: false,
+          message: "Courier booking is only allowed for courier fulfillment orders",
+        });
+      }
+
+      const updatedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          courierPartner: courierPartner.trim(),
+          trackingNumber: trackingNumber.trim(),
+          status: "SHIPPED",
+        },
+        include: orderInclude,
+      });
+
+      res.status(200).json({ success: true, data: updatedOrder });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: "Failed to update courier booking", error: error.message });
     }
   },
 };

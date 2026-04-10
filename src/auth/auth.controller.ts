@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
+import bcrypt from "bcrypt";
+import { randomUUID } from "node:crypto";
+import { hashPassword } from "better-auth/crypto";
 import { prisma } from "../lib/prisma.js";
 import { auth } from "../lib/auth.js";
+import { UserRole } from "../../generated/prisma/index.js";
 
 const ALLOWED_ROLES = ["CUSTOMER", "SELLER", "ADMIN", "SUPER_ADMIN", "DELIVERY_MAN"];
 
@@ -11,34 +15,139 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existinguser = await prisma.user.findUnique({ where: { email } });
+    // Keep normal registration strictly for CUSTOMER only.
+    if (role && String(role).toUpperCase() !== "CUSTOMER") {
+      return res.status(400).json({
+        message: "Use delivery man application for delivery registration",
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existinguser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existinguser) {
       return res.status(409).json({ message: "User already exists" });
     }
 
-    const normalizedRole = typeof role === "string" ? role.toUpperCase() : "CUSTOMER";
-    const userRole = ALLOWED_ROLES.includes(normalizedRole) ? normalizedRole : "CUSTOMER";
+    const hashedPassword = await hashPassword(String(password));
 
-    const result = await auth.api.signUpEmail({
-      body: {
-        email,
-        password,
-        name,
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name: String(name).trim(),
+          email: normalizedEmail,
+          role: "CUSTOMER",
+          status: "ACTIVE",
+          emailVerified: false,
+        },
+      });
 
-    await prisma.user.update({
-      where: { id: result.user.id },
-      data: {
-        role: userRole,
-        name,
-      },
+      await tx.account.create({
+        data: {
+          id: randomUUID(),
+          accountId: createdUser.id,
+          providerId: "credential",
+          userId: createdUser.id,
+          password: hashedPassword,
+        },
+      });
     });
 
     return res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
     console.error("Registration error:", error);
     return res.status(500).json({ message: "Internal server error registration failed" });
+  }
+};
+
+export const applyDeliveryMan = async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      phone,
+      nidNumber,
+      licenseNumber,
+      vehicleType,
+      vehicleRegistrationNo,
+      deliveryArea,
+      currentAddress,
+      emergencyContactName,
+      emergencyContactPhone,
+    } = req.body;
+
+    const requiredFields = [
+      name,
+      email,
+      password,
+      phone,
+      nidNumber,
+      licenseNumber,
+      vehicleType,
+      vehicleRegistrationNo,
+      deliveryArea,
+      currentAddress,
+      emergencyContactName,
+      emergencyContactPhone,
+    ];
+
+    if (requiredFields.some((field) => !field || String(field).trim().length === 0)) {
+      return res.status(400).json({ message: "All delivery man application fields are required" });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existinguser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existinguser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await hashPassword(String(password));
+
+    await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name: String(name).trim(),
+          email: normalizedEmail,
+          role: "DELIVERY_MAN",
+          status: "PENDING_APPROVAL",
+          emailVerified: false,
+        },
+      });
+
+      await tx.account.create({
+        data: {
+          id: randomUUID(),
+          accountId: createdUser.id,
+          providerId: "credential",
+          userId: createdUser.id,
+          password: hashedPassword,
+        },
+      });
+
+      await tx.deliveryManApplication.create({
+        data: {
+          userId: createdUser.id,
+          phone: String(phone).trim(),
+          nidNumber: String(nidNumber).trim(),
+          licenseNumber: String(licenseNumber).trim(),
+          vehicleType: String(vehicleType).trim(),
+          vehicleRegistrationNo: String(vehicleRegistrationNo).trim(),
+          deliveryArea: String(deliveryArea).trim(),
+          currentAddress: String(currentAddress).trim(),
+          emergencyContactName: String(emergencyContactName).trim(),
+          emergencyContactPhone: String(emergencyContactPhone).trim(),
+        },
+      });
+    });
+
+    return res.status(201).json({
+      message: "Delivery man application submitted. Wait for admin approval before login.",
+    });
+  } catch (error) {
+    console.error("Delivery man application error:", error);
+    return res.status(500).json({ message: "Internal server error delivery man application failed" });
   }
 };
 
@@ -50,20 +159,67 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     if (user.isBanned) {
       return res.status(403).json({ message: "User is banned" });
     }
+    if (user.role === "DELIVERY_MAN" && user.status !== "ACTIVE") {
+      return res.status(403).json({
+        message: "Your delivery man account is pending admin approval. Please wait for approval.",
+      });
+    }
 
-    const sessionData = await auth.api.signInEmail({
-      body: {
-        email,
-        password,
-      },
-    });
+    let sessionData;
+    try {
+      sessionData = await auth.api.signInEmail({
+        body: {
+          email: normalizedEmail,
+          password,
+        },
+      });
+    } catch (signinError) {
+      // Backward compatibility: migrate legacy bcrypt hashes to Better Auth hash format.
+      const credentialAccount = await prisma.account.findFirst({
+        where: {
+          userId: user.id,
+          providerId: "credential",
+        },
+        select: {
+          id: true,
+          password: true,
+        },
+      });
+
+      const maybeBcryptHash = credentialAccount?.password || "";
+      const isBcryptHash = maybeBcryptHash.startsWith("$2a$") || maybeBcryptHash.startsWith("$2b$") || maybeBcryptHash.startsWith("$2y$");
+
+      if (!credentialAccount || !isBcryptHash) {
+        throw signinError;
+      }
+
+      const isMatch = await bcrypt.compare(password, maybeBcryptHash);
+      if (!isMatch) {
+        throw signinError;
+      }
+
+      const migratedHash = await hashPassword(String(password));
+      await prisma.account.update({
+        where: { id: credentialAccount.id },
+        data: { password: migratedHash },
+      });
+
+      sessionData = await auth.api.signInEmail({
+        body: {
+          email: normalizedEmail,
+          password,
+        },
+      });
+    }
 
     res.cookie("better-auth.session_token", sessionData.token, {
       httpOnly: true,
@@ -83,6 +239,18 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    const message = error instanceof Error ? error.message : "Login failed";
+    const lower = message.toLowerCase();
+
+    if (
+      lower.includes("invalid") ||
+      lower.includes("credential") ||
+      lower.includes("password") ||
+      lower.includes("email")
+    ) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
     return res.status(500).json({ message: "Internal server error login failed" });
   }
 };

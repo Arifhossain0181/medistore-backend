@@ -1,9 +1,35 @@
 import { Request, Response } from "express";
 import { deliveryService } from "./delivery.service.js";
 
-const deliveryAllowedStatuses = ["PROCESSING", "SHIPPED", "DELIVERED"] as const;
+const deliveryAllowedStatuses = ["SHIPPED", "PROCESSING", "DELIVERED", "FAILED"] as const;
 
 export const deliveryController = {
+  checkCoverage: async (req: Request, res: Response) => {
+    try {
+      const division = String(req.query.division || "").trim();
+      const district = String(req.query.district || "").trim();
+      const thana = String(req.query.thana || "").trim();
+
+      if (!division || !district || !thana) {
+        return res.status(400).json({ success: false, message: "division, district and thana are required" });
+      }
+
+      const data = await deliveryService.checkCoverage(division, district, thana);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: "Failed to check coverage", error: error.message });
+    }
+  },
+
+  getDeliveryMen: async (_req: Request, res: Response) => {
+    try {
+      const data = await deliveryService.getAvailableDeliveryMen();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: "Failed to fetch delivery men", error: error.message });
+    }
+  },
+
   assignOrder: async (req: Request, res: Response) => {
     try {
       const { orderId, deliveryManId } = req.body as {
@@ -65,7 +91,7 @@ export const deliveryController = {
 
   updateOrderStatus: async (req: Request, res: Response) => {
     try {
-      const { status } = req.body as { status?: "PROCESSING" | "SHIPPED" | "DELIVERED" };
+      const { status } = req.body as { status?: "SHIPPED" | "DELIVERED" | "FAILED" };
 
       if (!status || !deliveryAllowedStatuses.includes(status)) {
         return res.status(400).json({

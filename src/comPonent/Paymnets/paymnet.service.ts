@@ -21,8 +21,23 @@ const getStripeClient = (): Stripe => {
     });
 };
 
+const getClientUrl = () => {
+    const rawClientUrl = process.env.CLIENT_URL?.trim();
+
+    if (!rawClientUrl) {
+        return "http://localhost:3000";
+    }
+
+    if (/^https?:\/\//i.test(rawClientUrl)) {
+        return rawClientUrl;
+    }
+
+    return `http://${rawClientUrl}`;
+};
+
 export const createCheckoutSessionService = async (items: StripeItem[]) => {
     const stripe = getStripeClient();
+    const clientUrl = getClientUrl();
 
     const lineItems = items.map((item) => ({
         quantity: item.quantity,
@@ -37,13 +52,14 @@ export const createCheckoutSessionService = async (items: StripeItem[]) => {
         payment_method_types: ["card"],
         mode: "payment",
         line_items: lineItems,
-        success_url: `${process.env.CLIENT_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.CLIENT_URL}/payment-cancelled`,
+        success_url: `${clientUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${clientUrl}/payment/cancelled`,
     });
 };
 
 export const initPayment = async (userId: string, medicineId: string) => {
     const stripe = getStripeClient();
+    const clientUrl = getClientUrl();
 
     const medicine = await prisma.medicine.findUnique({
         where: { id: medicineId },
@@ -56,15 +72,6 @@ export const initPayment = async (userId: string, medicineId: string) => {
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("User not found");
-
-    const existingPayment = await prisma.payment.findFirst({
-        where: {
-            userId,
-            medicineId,
-            status: "SUCCESS",
-        },
-    });
-    if (existingPayment) throw new Error("Medicine already purchased");
 
     const payment = await prisma.payment.create({
         data: {
@@ -97,8 +104,8 @@ export const initPayment = async (userId: string, medicineId: string) => {
                 },
             },
         ],
-        success_url: `${process.env.CLIENT_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.CLIENT_URL}/payment-cancelled`,
+        success_url: `${clientUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${clientUrl}/payment/cancelled`,
     });
 
     await prisma.payment.update({
@@ -178,7 +185,16 @@ export const verifySession = async (sessionId: string, userId: string) => {
         },
     });
 
-    if (!payment) throw new Error("Payment not found");
+    if (!payment) {
+        if (session.payment_status === "paid") {
+            return {
+                message: "Payment verified successfully",
+                medicineId: "",
+            };
+        }
+
+        throw new Error("Payment not found");
+    }
 
     if (session.payment_status === "paid" && payment.status !== "SUCCESS") {
         await prisma.payment.update({

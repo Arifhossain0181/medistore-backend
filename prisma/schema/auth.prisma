@@ -23,6 +23,8 @@ model User {
   payments  Payment[]
   deliveryAssignments        DeliveryAssignment[] @relation("DeliveryManAssignments")
   createdDeliveryAssignments DeliveryAssignment[] @relation("DeliveryAssignedBy")
+  deliveryManApplication           DeliveryManApplication?    @relation("DeliveryManApplicant")
+  reviewedDeliveryManApplications  DeliveryManApplication[]   @relation("DeliveryManReviewedBy")
 
   status String? @default("ACTIVE")
 
@@ -76,4 +78,28 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model DeliveryManApplication {
+  id                    String                 @id @default(uuid())
+  userId                String                 @unique
+  user                  User                   @relation("DeliveryManApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  phone                 String
+  nidNumber             String
+  licenseNumber         String
+  vehicleType           String
+  vehicleRegistrationNo String
+  deliveryArea          String
+  currentAddress        String
+  emergencyContactName  String
+  emergencyContactPhone String
+  status                DeliveryManApplicationStatus @default(PENDING)
+  rejectionReason       String?
+  reviewedById          String?
+  reviewedBy            User?                  @relation("DeliveryManReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt            DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@map("delivery_man_application")
 }

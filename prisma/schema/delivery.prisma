@@ -28,3 +28,21 @@ model DeliveryAssignment {
   @@index([deliveryManId, status])
   @@map("delivery_assignment")
 }
+
+model DeliveryCoverage {
+  id          String               @id @default(uuid())
+  division    String
+  district    String
+  thana       String
+  deliveryMode OrderFulfillmentType @default(OWN_DELIVERY)
+  fee         Float                @default(0)
+  etaDays     Int                  @default(1)
+  active      Boolean              @default(true)
+  notes       String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([division, district, thana])
+  @@index([division, district, thana, active])
+  @@map("delivery_coverage")
+}

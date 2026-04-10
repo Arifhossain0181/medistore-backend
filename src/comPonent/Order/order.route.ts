@@ -12,6 +12,7 @@ router.patch("/:id/status", authMiddleware, Role(["SELLER", "SUPER_ADMIN"]), ord
 
 // Admin routes
 router.get("/admin/all", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), orderController.allOrders);
+router.patch("/admin/:id/courier", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), orderController.updateCourierBooking);
 
 // Customer routes
 router.post("/", authMiddleware, Role(["CUSTOMER"]), orderController.createOrder);

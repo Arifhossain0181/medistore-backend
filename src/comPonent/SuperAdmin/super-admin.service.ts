@@ -44,7 +44,10 @@ export const superAdminService = {
   updateUserRole: async (userId: string, role: AllowedRole) => {
     return prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: {
+        role,
+        status: "ACTIVE",
+      },
       select: {
         id: true,
         name: true,
