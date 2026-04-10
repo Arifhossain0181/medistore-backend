@@ -18,6 +18,7 @@ model Medicine {
   orderItems OrderItem[]
   reviews    Review[]
   cartItems  CartItem[]
+  payments   Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

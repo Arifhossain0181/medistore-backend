@@ -1,0 +1,30 @@
+model DeliveryAssignment {
+  id String @id @default(uuid())
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  deliveryManId String
+  deliveryMan   User   @relation("DeliveryManAssignments", fields: [deliveryManId], references: [id], onDelete: Restrict)
+
+  assignedById String?
+  assignedBy   User?   @relation("DeliveryAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  status DeliveryAssignmentStatus @default(ASSIGNED)
+  note   String?
+
+  assignedAt  DateTime  @default(now())
+  pickedAt    DateTime?
+  deliveredAt DateTime?
+  failedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deliveryManId])
+  @@index([assignedById])
+  @@index([status])
+  @@index([assignedAt])
+  @@index([deliveryManId, status])
+  @@map("delivery_assignment")
+}

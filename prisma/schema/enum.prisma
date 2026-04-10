@@ -2,14 +2,28 @@ enum UserRole {
   CUSTOMER
   SELLER
   ADMIN
+  SUPER_ADMIN
+  DELIVERY_MAN
 }
 
 enum OrderStatus {
-  
   PLACED
-  
   PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum DeliveryAssignmentStatus {
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
 }

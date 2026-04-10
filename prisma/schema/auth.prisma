@@ -20,6 +20,9 @@ model User {
   orders    Order[]    @relation("CustomerOrders")
   reviews   Review[]
   cart      Cart?      @relation("CustomerCart")
+  payments  Payment[]
+  deliveryAssignments        DeliveryAssignment[] @relation("DeliveryManAssignments")
+  createdDeliveryAssignments DeliveryAssignment[] @relation("DeliveryAssignedBy")
 
   status String? @default("ACTIVE")
 
