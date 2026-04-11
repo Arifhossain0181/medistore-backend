@@ -1,7 +1,73 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import bcrypt from "bcrypt";
-import { email } from "better-auth";
+
+export const getProfile = async (req: Request, res: Response) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                role: true,
+                status: true,
+            },
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        return res.json({ success: true, user });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch profile", error });
+    }
+};
+
+export const getDashboardStats = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user.id;
+
+        const [user, totalOrders, paidPayments] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    status: true,
+                },
+            }),
+            prisma.order.count({
+                where: { customerId: userId },
+            }),
+            prisma.payment.aggregate({
+                where: {
+                    userId,
+                    status: "SUCCESS",
+                },
+                _sum: {
+                    amount: true,
+                },
+            }),
+        ]);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        return res.json({
+            success: true,
+            stats: {
+                totalOrders,
+                totalSpent: Number(paidPayments?._sum?.amount || 0),
+                accountStatus: user.status || "ACTIVE",
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch dashboard stats", error });
+    }
+};
 
 export const updateProfile = async (req: Request, res: Response) => {
             const { name ,image, email } =req.body;

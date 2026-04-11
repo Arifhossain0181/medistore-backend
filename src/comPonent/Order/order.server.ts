@@ -11,6 +11,122 @@ type CreateOrderInput = {
   phone?: string;
 };
 
+type OrderItemWithMedicine = {
+  id: string;
+  medicineId: string;
+  quantity: number;
+  price: number;
+  medicine: {
+    id: string;
+    name: string;
+    price: number;
+    sellerId: string;
+    description?: string;
+    imageUrl?: string | null;
+  };
+};
+
+type PaymentSummaryItem = {
+  medicineId: string;
+  medicineName: string;
+  status: string;
+  amount: number;
+  paidAt: Date | null;
+  stripeSessionId: string | null;
+};
+
+type OrderWithPaymentSummary = {
+  id: string;
+  totalAmount: number;
+  shippingAddress: string;
+  status: OrderStatus;
+  fulfillmentType: string;
+  deliveryFee: number;
+  etaDays: number | null;
+  serviceDivision: string | null;
+  serviceDistrict: string | null;
+  serviceThana: string | null;
+  courierPartner: string | null;
+  trackingNumber: string | null;
+  customerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  customer?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  items: OrderItemWithMedicine[];
+  paymentSummary?: {
+    status: "PAID" | "PARTIALLY_PAID" | "PENDING";
+    totalPaidAmount: number;
+    paidItems: number;
+    totalItems: number;
+    payments: PaymentSummaryItem[];
+  };
+};
+
+const buildPaymentSummary = async (order: OrderWithPaymentSummary, customerId: string) => {
+  const medicineIds = Array.from(new Set(order.items.map((item) => item.medicineId)));
+
+  const payments = await prisma.payment.findMany({
+    where: {
+      userId: customerId,
+      medicineId: { in: medicineIds },
+    },
+    select: {
+      medicineId: true,
+      amount: true,
+      status: true,
+      paidAt: true,
+      stripeSessionId: true,
+      medicine: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const paymentMap = new Map(
+    payments.map((payment) => [payment.medicineId, payment]),
+  );
+
+  const paymentItems: PaymentSummaryItem[] = order.items.map((item) => {
+    const payment = paymentMap.get(item.medicineId);
+
+    return {
+      medicineId: item.medicineId,
+      medicineName: item.medicine.name,
+      status: payment?.status || "PENDING",
+      amount: payment?.amount || item.price * item.quantity,
+      paidAt: payment?.paidAt ?? null,
+      stripeSessionId: payment?.stripeSessionId ?? null,
+    };
+  });
+
+  const paidItems = paymentItems.filter((item) => item.status === "SUCCESS");
+  const totalPaidAmount = paidItems.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  let status: "PAID" | "PARTIALLY_PAID" | "PENDING" = "PENDING";
+  if (paidItems.length === paymentItems.length && paymentItems.length > 0) {
+    status = "PAID";
+  } else if (paidItems.length > 0) {
+    status = "PARTIALLY_PAID";
+  }
+
+  return {
+    status,
+    totalPaidAmount,
+    paidItems: paidItems.length,
+    totalItems: paymentItems.length,
+    payments: paymentItems,
+  };
+};
+
 export const OrderService = {
   createOrder: async (
     customerId: string,
@@ -91,7 +207,7 @@ export const OrderService = {
     });
   },
   getMyOrders: async (customerId: string ,email: string) => {
-    return await prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where: {
         customerId
       },
@@ -107,6 +223,15 @@ export const OrderService = {
         createdAt: 'desc'
       },
     });
+
+    const ordersWithPayments = await Promise.all(
+      orders.map(async (order) => ({
+        ...order,
+        paymentSummary: await buildPaymentSummary(order as OrderWithPaymentSummary, customerId),
+      })),
+    );
+
+    return ordersWithPayments;
   },
   allOrders: async () => {
     return await prisma.order.findMany({
@@ -118,6 +243,9 @@ export const OrderService = {
         },
         customer: true,
       },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
   },
   updateOrderStatus: async (orderId: string, status: OrderStatus) => {
@@ -156,6 +284,10 @@ export const OrderService = {
       return null;
     }
 
+    const paymentSummary = userId
+      ? await buildPaymentSummary(order as OrderWithPaymentSummary, userId)
+      : undefined;
+
     // Authorization checks if user info is provided
     if (userId && userRole) {
       if (userRole === "CUSTOMER" && order.customerId !== userId) {
@@ -172,21 +304,15 @@ export const OrderService = {
       }
     }
 
-    return order;
+    return {
+      ...order,
+      paymentSummary,
+    };
   },
   //seller specific orders
 
   getOrdersForSeller: async (sellerId: string) => {
     const orders = await prisma.order.findMany({
-      where:{
-        items:{
-          some:{
-            medicine:{
-              sellerId: sellerId
-            }
-          }
-        }
-      },
       include:{
         customer:{
           select:{
@@ -213,16 +339,13 @@ export const OrderService = {
       }
     });
 
-    // Map orders to include user info and filter items for this seller only
-    return orders.map(order => ({
+    // For seller dashboard workflow, expose customer orders so sellers can assign delivery quickly.
+    return orders.map((order) => ({
       ...order,
       user: order.customer,
       userId: order.customerId,
       total: order.totalAmount,
-      // Filter items to show only this seller's products
-      items: order.items
-        .filter(item => item.medicine.sellerId === sellerId)
-        .map(item => item.medicine.name)
+      items: order.items.map((item) => item.medicine.name),
     }));
   }
 };

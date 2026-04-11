@@ -257,36 +257,29 @@ export const login = async (req: Request, res: Response) => {
 
 export const me = async (req: Request, res: Response) => {
   try {
-    const cookies = req.headers.cookie?.split(";").map((c) => c.trim()) || [];
-    const sessionCookie = cookies.find((c) => c.startsWith("better-auth.session_token="));
-    const token = sessionCookie?.split("=")[1];
-
-    if (!token) {
-      return res.status(401).json({ message: "No session token found - Please login first" });
-    }
-
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: { user: true },
+    // Delegate session resolution to Better Auth so that both
+    // credential and social (Google) logins are handled consistently.
+    const sessionResult = await auth.api.getSession({
+      headers: {
+        cookie: req.headers.cookie || "",
+      },
     });
 
-    if (!session || !session.user) {
-      return res.status(401).json({ message: "Invalid or expired session - Please login again" });
-    }
+    const sessionUser = sessionResult?.user;
 
-    if (new Date(session.expiresAt) < new Date()) {
-      return res.status(401).json({ message: "Session expired - Please login again" });
+    if (!sessionUser) {
+      return res.status(401).json({ message: "No active session - Please login first" });
     }
 
     return res.status(200).json({
       user: {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        role: session.user.role,
-        status: session.user.status,
-        isBanned: session.user.isBanned,
-        createdAt: session.user.createdAt,
+        id: sessionUser.id,
+        name: sessionUser.name,
+        email: sessionUser.email,
+        role: (sessionUser as any).role,
+        status: (sessionUser as any).status,
+        isBanned: (sessionUser as any).isBanned,
+        createdAt: (sessionUser as any).createdAt,
       },
     });
   } catch (error) {

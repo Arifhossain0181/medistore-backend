@@ -15,24 +15,72 @@ import sellerRouter from "./comPonent/seller/seller.route.js";
 import deliveryRouter from "./comPonent/delivery/delivery.route.js";
 import superAdminRouter from "./comPonent/SuperAdmin/super-admin.route.js";
 import paymentRouter from "./comPonent/Paymnets/payment.routes.js";
+import chatRouter from "./comPonent/chat/chat.routes.js";
+import prescriptionRouter from "./comPonent/prescription/prescription.routes.js";
+import smartSearchRouter from "./comPonent/smartSearch/search.route.js";
 import { authMiddleware } from "./auth/middleware/auth.middleware.js";
 
 const app = express();
 app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 app.use(cookieParser());
+
+// Debug middleware
+app.use((req, res, next) => {
+  if (req.path.includes("sign-in")) {
+    console.log(`[Route] ${req.method} ${req.path} - routing...`);
+  }
+  next();
+});
 
 app.use(
   cors({
-    origin: "https://medistore-frontend-nu.vercel.app",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "https://medistore-frontend-nu.vercel.app",
+    ],
     credentials: true,
   }),
 );
 
+app.post("/api/auth/sign-in/social", (req, res, next) => {
+  const provider = String(req.body?.provider || "").toLowerCase();
+  const callbackURL = req.body?.callbackURL;
+
+  if (provider !== "google") {
+    return next();
+  }
+
+  const googleClientId =
+    process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const googleClientSecret =
+    process.env.GOOGLE_CLIENT_SECRET ||
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET ||
+    process.env.GOOGLE_SECRET;
+
+  if (!googleClientId || !googleClientSecret) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Google login is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend .env and restart server.",
+    });
+  }
+
+  if (!callbackURL) {
+    return res.status(400).json({
+      success: false,
+      message: "callbackURL is required for social sign-in.",
+    });
+  }
+
+  next();
+});
+
 // Custom auth routes (login, register, etc.)
 app.use("/api/auth", authRoutes);
 
-// Better Auth routes
+// Better Auth routes (mounted under /api/auth so it doesn't swallow other /api/* routes like /api/categories)
 app.use("/api/auth", toNodeHandler(auth));
 
 // API routes
@@ -47,6 +95,9 @@ app.use("/api/cart", cartRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/user", userRouter);
 app.use("/api/payment", paymentRouter);
+app.use("/api/chat", chatRouter);
+app.use("/api/prescription", prescriptionRouter);
+app.use("/api/search", smartSearchRouter);
 
 app.get("/", (_req, res) => {
   res.json({
@@ -66,6 +117,8 @@ app.get("/", (_req, res) => {
       delivery: "/api/delivery",
       user: "/api/user",
       payment: "/api/payment",
+      prescription: "/api/prescription",
+      search: "/api/search",
     },
   });
 });

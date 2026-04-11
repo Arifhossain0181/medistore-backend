@@ -78,7 +78,7 @@ export const orderController = {
         });
       }
 
-      if (userRole !== "SUPER_ADMIN") {
+      if (userRole !== "SUPER_ADMIN" && userRole !== "SELLER") {
         const order = await prisma.order.findFirst({
           where: {
             id: orderId as string,

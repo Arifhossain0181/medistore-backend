@@ -86,26 +86,6 @@ export const deliveryService = {
       throw new Error("This order cannot be assigned");
     }
 
-    if (assignedBy.role === "SELLER") {
-      const sellerOrder = await prisma.order.findFirst({
-        where: {
-          id: orderId,
-          items: {
-            some: {
-              medicine: {
-                sellerId: assignedById,
-              },
-            },
-          },
-        },
-        select: { id: true },
-      });
-
-      if (!sellerOrder) {
-        throw new Error("You can assign only your own orders");
-      }
-    }
-
     const deliveryMan = await prisma.user.findUnique({ where: { id: deliveryManId } });
     if (!deliveryMan || deliveryMan.role !== "DELIVERY_MAN") {
       throw new Error("Invalid delivery man");
