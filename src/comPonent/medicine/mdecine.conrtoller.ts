@@ -72,3 +72,30 @@ export const incrementView  = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: "Failed to increment view count", error: error.message });
     }
 }
+
+export const generateMedicineDescription = async (req: Request, res: Response) => {
+    try {
+        const { name } = req.body as { name?: string };
+
+        if (!name || name.trim().length < 2) {
+            return res.status(400).json({
+                success: false,
+                message: "Medicine name is required",
+            });
+        }
+
+        const generated = await medicineServer.generateMedicineContent(name);
+
+        return res.status(200).json({
+            success: true,
+            data: generated,
+        });
+    } catch (error: any) {
+        console.error("Generate medicine description error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to generate medicine description",
+            error: error?.message,
+        });
+    }
+};
