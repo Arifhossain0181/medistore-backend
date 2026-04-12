@@ -13,6 +13,13 @@ const normalizeUrl = (url: string) => url.trim().replace(/\/+$/, "");
 
 const isLocalhostUrl = (url: string) => /^http:\/\/localhost(?::\d+)?(\/|$)/i.test(url.trim());
 
+const parseCommaSeparatedUrls = (raw?: string) =>
+    (raw || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map(normalizeUrl);
+
 const rawConfiguredBaseURL =
     process.env.BETTER_AUTH_URL || process.env.BACKEND_URL;
 const vercelBaseURL = process.env.VERCEL_URL
@@ -42,13 +49,20 @@ const resolvedBaseURL = (() => {
     return "http://localhost:5000";
 })();
 
-const trustedOrigins = [
-    process.env.FRONTEND_URL,
-    process.env.FRONTEND_APP_URL,
-    "http://localhost:3000",
-    "https://medistore-frontend-ten.vercel.app",
-    "https://medistore-frontend-nu.vercel.app",
-].filter((origin): origin is string => Boolean(origin && origin.trim()));
+const trustedOrigins = Array.from(
+    new Set([
+        ...parseCommaSeparatedUrls(process.env.TRUSTED_ORIGINS),
+        ...parseCommaSeparatedUrls(process.env.BETTER_AUTH_TRUSTED_ORIGINS),
+        process.env.FRONTEND_URL,
+        process.env.FRONTEND_APP_URL,
+        process.env.FRONTEND_PUBLIC_URL,
+        "http://localhost:3000"
+        ,
+        "https://medistore-frontend-nu.vercel.app",
+    ]
+        .filter((origin): origin is string => Boolean(origin && origin.trim()))
+        .map(normalizeUrl))
+);
 
 const socialProviders = googleClientId && googleClientSecret
     ? {
