@@ -30,13 +30,14 @@ const orderInclude = {
 export const orderController = {
   createOrder: async (req: Request, res: Response) => {
     try {
-      const { items, shippingAddress, division, district, thana } = req.body;
+      const { items, shippingAddress, division, district, thana, stripeSessionId } = req.body;
       const customerId = req.user!.id;
       const newOrder = await OrderService.createOrder(customerId, items, {
         shippingAddress,
         division,
         district,
         thana,
+        stripeSessionId,
       });
       res.status(201).json({ success: true, data: newOrder });
     } catch (error: any) {
