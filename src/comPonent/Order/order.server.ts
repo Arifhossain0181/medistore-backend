@@ -135,7 +135,7 @@ export const OrderService = {
     orderInput: CreateOrderInput,
   ) => {
     const { shippingAddress, division, district, thana } = orderInput;
-  const { stripeSessionId } = orderInput;
+    const { stripeSessionId } = orderInput;
 
     if (!division || !district || !thana) {
       throw new Error("Delivery area selection is required");
@@ -251,28 +251,28 @@ export const OrderService = {
           data: {
             stock: {
               decrement: item.quantity,
-
-                 // Create payment records for each item if stripeSessionId is provided
-                 if (stripeSessionId) {
-                   for (const item of normalizedItems) {
-                     const med = medicines.find((m) => m.id === item.medicineId)!;
-                     const itemPrice = item.price ?? med.price;
-         
-                     await tx.payment.create({
-                       data: {
-                         userId: customerId,
-                         medicineId: item.medicineId,
-                         amount: itemPrice,
-                         status: "SUCCESS",
-                         paidAt: new Date(),
-                         stripeSessionId,
-                       },
-                     });
-                   }
-                 }
             },
           },
         });
+      }
+
+      // Create payment records for each item if stripeSessionId is provided
+      if (stripeSessionId) {
+        for (const item of normalizedItems) {
+          const med = medicines.find((m) => m.id === item.medicineId)!;
+          const itemPrice = item.price ?? med.price;
+
+          await tx.payment.create({
+            data: {
+              userId: customerId,
+              medicineId: item.medicineId,
+              amount: itemPrice,
+              status: "SUCCESS",
+              paidAt: new Date(),
+              stripeSessionId,
+            },
+          });
+        }
       }
 
       return createdOrder;
