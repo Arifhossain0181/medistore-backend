@@ -9,6 +9,47 @@ const googleClientSecret =
     process.env.GOOGLE_OAUTH_CLIENT_SECRET ||
     process.env.GOOGLE_SECRET;
 
+const normalizeUrl = (url: string) => url.trim().replace(/\/+$/, "");
+
+const isLocalhostUrl = (url: string) => /^http:\/\/localhost(?::\d+)?(\/|$)/i.test(url.trim());
+
+const rawConfiguredBaseURL =
+    process.env.BETTER_AUTH_URL || process.env.BACKEND_URL;
+const vercelBaseURL = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : undefined;
+
+const resolvedBaseURL = (() => {
+    const configuredBaseURL = rawConfiguredBaseURL
+        ? normalizeUrl(rawConfiguredBaseURL)
+        : undefined;
+
+    // On production, never use localhost callback URL if env is misconfigured.
+    if (configuredBaseURL) {
+        if (isLocalhostUrl(configuredBaseURL) && vercelBaseURL) {
+            if (vercelBaseURL) {
+                return normalizeUrl(vercelBaseURL);
+            }
+        } else {
+            return configuredBaseURL;
+        }
+    }
+
+    if (vercelBaseURL) {
+        return normalizeUrl(vercelBaseURL);
+    }
+
+    return "http://localhost:5000";
+})();
+
+const trustedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.FRONTEND_APP_URL,
+    "http://localhost:3000",
+    "https://medistore-frontend-ten.vercel.app",
+    "https://medistore-frontend-nu.vercel.app",
+].filter((origin): origin is string => Boolean(origin && origin.trim()));
+
 const socialProviders = googleClientId && googleClientSecret
     ? {
             google: {
@@ -29,13 +70,10 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    // Use BETTER_AUTH_URL first (for production), then BACKEND_URL, then local default
-    baseURL: process.env.BETTER_AUTH_URL || process.env.BACKEND_URL || "http://localhost:5000",
+    // Resolve to deployment URL in production to avoid localhost redirect_uri mismatches.
+    baseURL: resolvedBaseURL,
     socialProviders,
-    trustedOrigins: [
-        process.env.FRONTEND_URL || "http://localhost:3000",
-        "https://medistore-frontend-ten.vercel.app"
-    ],
+    trustedOrigins,
    
     advanced: {
         disableCSRFCheck: true,

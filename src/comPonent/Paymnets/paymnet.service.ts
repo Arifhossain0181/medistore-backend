@@ -9,11 +9,20 @@ export interface StripeItem {
 }
 
 const getStripeClient = (): Stripe => {
-    const stripeSecretKey =
-        process.env.STRIPE_SECRET_KEY || process.env.stripe_secret_key;
+    const stripeSecretKey = (
+        process.env.STRIPE_SECRET_KEY ||
+        process.env.stripe_secret_key ||
+        process.env.STRIPE_SECRET ||
+        process.env.STRIPE_API_KEY ||
+        ""
+    ).trim();
 
     if (!stripeSecretKey) {
         throw new Error("Missing STRIPE_SECRET_KEY in environment variables");
+    }
+
+    if (!/^sk_(test|live)_/i.test(stripeSecretKey)) {
+        throw new Error("Invalid STRIPE_SECRET_KEY format");
     }
 
     return new Stripe(stripeSecretKey, {
@@ -22,7 +31,16 @@ const getStripeClient = (): Stripe => {
 };
 
 const getClientUrl = () => {
-    const rawClientUrl = process.env.CLIENT_URL?.trim();
+    const rawClientUrl = (
+        process.env.CLIENT_URL ||
+        process.env.FRONTEND_URL ||
+        process.env.NEXT_PUBLIC_FRONTEND_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+        process.env.VERCEL_URL ||
+        ""
+    ).trim();
 
     if (!rawClientUrl) {
         return "http://localhost:3000";
@@ -30,6 +48,10 @@ const getClientUrl = () => {
 
     if (/^https?:\/\//i.test(rawClientUrl)) {
         return rawClientUrl;
+    }
+
+    if (process.env.VERCEL || process.env.VERCEL_ENV) {
+        return `https://${rawClientUrl}`;
     }
 
     return `http://${rawClientUrl}`;
@@ -122,8 +144,12 @@ export const initPayment = async (userId: string, medicineId: string) => {
 
 export const handleWebhook = async (payload: Buffer, sig: string) => {
     const stripe = getStripeClient();
-    const webhookSecret =
-        process.env.STRIPE_WEBHOOK_SECRET || process.env.stripe_webhook_secret;
+    const webhookSecret = (
+        process.env.STRIPE_WEBHOOK_SECRET ||
+        process.env.stripe_webhook_secret ||
+        process.env.stripe_Webhook_secret ||
+        ""
+    ).trim();
 
     if (!webhookSecret) {
         throw new Error("Missing STRIPE_WEBHOOK_SECRET");
