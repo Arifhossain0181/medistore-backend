@@ -5,6 +5,7 @@ import { authMiddleware } from "../../auth/middleware/auth.middleware.js";
 
 const router = Router();
 
+router.get("/order-summary", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.getOrderSummary);
 router.get("/users", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.getallusers);
 router.patch("/users/:id/ban", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.banUnbanUsers);
 router.patch("/users/:id/role", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), admincontroler.updateUserRole);

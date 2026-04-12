@@ -5,9 +5,10 @@ import { deliveryController } from "./delivery.controller.js";
 
 const router = Router();
 
+router.get("/coverage/check", deliveryController.checkCoverage);
+
 router.use(authMiddleware);
 
-router.get("/coverage/check", Role(["CUSTOMER", "SELLER", "ADMIN", "SUPER_ADMIN", "DELIVERY_MAN"]), deliveryController.checkCoverage);
 router.get("/men", Role(["SELLER", "ADMIN"]), deliveryController.getDeliveryMen);
 router.post("/assign", Role(["SELLER", "ADMIN"]), deliveryController.assignOrder);
 router.get("/orders", Role(["SELLER", "ADMIN", "DELIVERY_MAN"]), deliveryController.getOrders);

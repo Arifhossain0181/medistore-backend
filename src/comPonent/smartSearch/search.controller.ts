@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { smartSearch } from "./search.service.js";
 
 export const handleSearch = async (req: Request, res: Response) => {
-  const { query } = req.query as { query: string };
+  const { query } = req.query as { query?: string };
 
   if (!query || query.trim().length < 2) {
     return res.status(400).json({
@@ -12,13 +12,10 @@ export const handleSearch = async (req: Request, res: Response) => {
   }
 
   try {
-    const { medicines, keywords, aiAdvice, medicineSuggestions } = await smartSearch(query.trim());
-    return res.status(200).json({
-      success: true,
-      data: { medicines, keywords, aiAdvice, medicineSuggestions, total: medicines.length },
-    });
-  } catch (error: any) {
-    console.error("Search error:", error?.message);
+    const data = await smartSearch(query.trim());
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Search error:", error);
     return res.status(500).json({
       success: false,
       message: "Search failed",

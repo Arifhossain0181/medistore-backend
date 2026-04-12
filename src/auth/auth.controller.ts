@@ -221,10 +221,20 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    res.cookie("better-auth.session_token", sessionData.token, {
+    const sessionToken =
+      (sessionData as { token?: string })?.token ||
+      (sessionData as { session?: { token?: string } })?.session?.token;
+
+    if (!sessionToken) {
+      console.error("Login error: Better Auth signInEmail returned no session token", sessionData);
+      return res.status(500).json({ message: "Login failed: session token missing" });
+    }
+
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("better-auth.session_token", sessionToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 60 * 60 * 24 * 7 * 1000,
     });
 
@@ -251,7 +261,12 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    return res.status(500).json({ message: "Internal server error login failed" });
+    return res.status(500).json({
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Internal server error login failed"
+          : `Internal server error login failed: ${message}`,
+    });
   }
 };
 

@@ -140,10 +140,39 @@ export const OrderService = {
     }
 
     // Validate that referenced medicines exist and use their stored prices
-    const medicineIds = items.map((i) => i.medicineId);
+    const aggregatedItems = new Map<string, { quantity: number; price?: number }>();
+    for (const item of items) {
+      const medicineId = String(item.medicineId || "").trim();
+      const quantity = Number(item.quantity || 0);
+
+      if (!medicineId || quantity <= 0) {
+        throw new Error("Invalid order item payload");
+      }
+
+      const prev = aggregatedItems.get(medicineId);
+      if (prev) {
+        prev.quantity += quantity;
+        if (item.price !== undefined) {
+          prev.price = item.price;
+        }
+      } else {
+        aggregatedItems.set(medicineId, {
+          quantity,
+          price: item.price,
+        });
+      }
+    }
+
+    const normalizedItems = Array.from(aggregatedItems.entries()).map(([medicineId, data]) => ({
+      medicineId,
+      quantity: data.quantity,
+      price: data.price,
+    }));
+
+    const medicineIds = normalizedItems.map((i) => i.medicineId);
     const medicines = await prisma.medicine.findMany({
       where: { id: { in: medicineIds } },
-      select: { id: true, price: true },
+      select: { id: true, price: true, stock: true },
     });
 
     const missing = medicineIds.filter(
@@ -167,43 +196,65 @@ export const OrderService = {
     }
 
     // Calculate total amount using official medicine prices when available
-    const totalAmount = items.reduce((sum, item) => {
+    for (const item of normalizedItems) {
+      const med = medicines.find((m) => m.id === item.medicineId)!;
+      if (Number(med.stock) < Number(item.quantity)) {
+        throw new Error(`Insufficient stock for medicine ${item.medicineId}`);
+      }
+    }
+
+    const totalAmount = normalizedItems.reduce((sum, item) => {
       const med = medicines.find((m) => m.id === item.medicineId)!;
       const price = item.price ?? med.price;
       return sum + price * item.quantity;
     }, 0);
 
-    return await prisma.order.create({
-      data: {
-        customerId,
-        status: OrderStatus.PLACED,
-        totalAmount,
-        shippingAddress,
-        fulfillmentType: coverage.deliveryMode,
-        deliveryFee: coverage.fee,
-        etaDays: coverage.etaDays,
-        serviceDivision: coverage.division,
-        serviceDistrict: coverage.district,
-        serviceThana: coverage.thana,
-        items: {
-          create: items.map((item: any) => {
-            const med = medicines.find((m) => m.id === item.medicineId)!;
-            return {
-              medicineId: item.medicineId,
-              quantity: item.quantity,
-              price: item.price ?? med.price,
-            };
-          }),
-        },
-      },
-      include: {
-        items: {
-          include: {
-            medicine: true,
+    return await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          customerId,
+          status: OrderStatus.PLACED,
+          totalAmount,
+          shippingAddress,
+          fulfillmentType: coverage.deliveryMode,
+          deliveryFee: coverage.fee,
+          etaDays: coverage.etaDays,
+          serviceDivision: coverage.division,
+          serviceDistrict: coverage.district,
+          serviceThana: coverage.thana,
+          items: {
+            create: normalizedItems.map((item) => {
+              const med = medicines.find((m) => m.id === item.medicineId)!;
+              return {
+                medicineId: item.medicineId,
+                quantity: item.quantity,
+                price: item.price ?? med.price,
+              };
+            }),
           },
         },
-        customer: true,
-      },
+        include: {
+          items: {
+            include: {
+              medicine: true,
+            },
+          },
+          customer: true,
+        },
+      });
+
+      for (const item of normalizedItems) {
+        await tx.medicine.update({
+          where: { id: item.medicineId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
+
+      return createdOrder;
     });
   },
   getMyOrders: async (customerId: string ,email: string) => {

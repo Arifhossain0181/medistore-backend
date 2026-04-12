@@ -60,7 +60,7 @@ export const verifySession = async (
 ): Promise<void> => {
   try {
     const sessionId = (req.query.sessionId as string) || "";
-    const result = await paymentService.verifySession(sessionId, req.user!.id);
+    const result = await paymentService.verifySession(sessionId, req.user?.id);
     res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });

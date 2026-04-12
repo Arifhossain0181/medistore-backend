@@ -174,14 +174,18 @@ export const handleWebhook = async (payload: Buffer, sig: string) => {
     return { received: true };
 };
 
-export const verifySession = async (sessionId: string, userId: string) => {
+export const verifySession = async (sessionId: string, userId?: string) => {
+    if (!sessionId) {
+        throw new Error("sessionId is required");
+    }
+
     const stripe = getStripeClient();
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const payment = await prisma.payment.findFirst({
         where: {
             stripeSessionId: sessionId,
-            userId,
+            ...(userId ? { userId } : {}),
         },
     });
 

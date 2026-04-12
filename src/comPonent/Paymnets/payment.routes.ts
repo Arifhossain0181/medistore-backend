@@ -16,7 +16,7 @@ const router = express.Router();
 router.post("/create-checkout-session", createCheckoutSession);
 router.post("/init", authMiddleware, initPayment);
 router.post("/webhook", handleWebhook);
-router.get("/verify-session", authMiddleware, verifySession);
+router.get("/verify-session", verifySession);
 router.get("/access/:medicineId", authMiddleware, checkAccess);
 router.get("/admin/all", authMiddleware, Role(["ADMIN", "SUPER_ADMIN"]), getAllPaymentsForAdmin);
 router.get("/my-purchases", authMiddleware, getMyPurchasedMedicines);

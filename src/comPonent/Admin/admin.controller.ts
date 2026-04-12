@@ -5,6 +5,17 @@ import { UserRole } from "../../../generated/prisma/index.js";
 const ALLOWED_ROLES = ["CUSTOMER", "SELLER", "ADMIN", "SUPER_ADMIN", "DELIVERY_MAN"];
 
 export const admincontroler = {
+  getOrderSummary: async (req: Request, res: Response) => {
+    try {
+      const parsed = Number(req.query.days);
+      const days = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 7;
+      const summary = await adminService.getOrderSummary(days);
+      res.status(200).json({ success: true, data: summary });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to generate order summary", error: error.message });
+    }
+  },
+
   getallusers: async (_req: Request, res: Response) => {
     const users = await adminService.getAllUsers();
     res.status(200).json({ success: true, data: users });

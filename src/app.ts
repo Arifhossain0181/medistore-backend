@@ -16,7 +16,6 @@ import deliveryRouter from "./comPonent/delivery/delivery.route.js";
 import superAdminRouter from "./comPonent/SuperAdmin/super-admin.route.js";
 import paymentRouter from "./comPonent/Paymnets/payment.routes.js";
 import chatRouter from "./comPonent/chat/chat.routes.js";
-import prescriptionRouter from "./comPonent/prescription/prescription.routes.js";
 import smartSearchRouter from "./comPonent/smartSearch/search.route.js";
 import { authMiddleware } from "./auth/middleware/auth.middleware.js";
 
@@ -96,7 +95,6 @@ app.use("/api/reviews", reviewRouter);
 app.use("/api/user", userRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/chat", chatRouter);
-app.use("/api/prescription", prescriptionRouter);
 app.use("/api/search", smartSearchRouter);
 
 app.get("/", (_req, res) => {
@@ -117,7 +115,6 @@ app.get("/", (_req, res) => {
       delivery: "/api/delivery",
       user: "/api/user",
       payment: "/api/payment",
-      prescription: "/api/prescription",
       search: "/api/search",
     },
   });
